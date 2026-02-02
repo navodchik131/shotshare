@@ -1,0 +1,23 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Установка зависимостей системы
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY bot/ ./bot/
+COPY database/ ./database/
+COPY config.py .
+COPY init_db.py .
+
+# Создаем директорию для медиа
+RUN mkdir -p /app/media
+
+CMD ["python", "-m", "bot.main"]
+

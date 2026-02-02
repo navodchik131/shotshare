@@ -1,0 +1,24 @@
+# Telegram Bot
+python-telegram-bot[job-queue]==20.7
+
+# Database
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.12.1
+
+# Web Admin Panel
+flask==3.0.0
+flask-sqlalchemy==3.1.1
+flask-login==0.6.3
+flask-wtf==1.2.1
+wtforms==3.1.1
+
+# Utils
+python-dotenv==1.0.0
+pytz==2023.3
+requests==2.31.0
+Pillow==10.1.0
+
+# Content Moderation (optional - можно использовать внешние API)
+# Для MVP можно использовать простые проверки или подключить внешние сервисы
+

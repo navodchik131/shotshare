@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Модерация поста - ShotShare Admin{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Пост #{{ post.id }}</h2>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <p><strong>Автор:</strong> {{ post.author.name }} (ID: {{ post.author.telegram_id }})</p>
+        <p><strong>Задание:</strong> {{ post.task.text }}</p>
+        <p><strong>Тип медиа:</strong> {{ post.media_type }}</p>
+        <p><strong>Жалоб:</strong> <span class="badge badge-danger">{{ post.complaints_count }}</span></p>
+        <p><strong>Просмотров:</strong> {{ post.views_count }}</p>
+        <p><strong>Лайков:</strong> {{ post.likes_count }}</p>
+        <p><strong>Дата:</strong> {{ post.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+    </div>
+    
+    <div class="form-group" style="margin-bottom: 2rem;">
+        <label>Медиа:</label>
+        <div style="margin-top: 1rem; text-align: center; background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+            {% set media_url = url_for('get_media', file_id=post.media_file_id) %}
+            {% if post.media_type == 'photo' %}
+                <img src="{{ media_url }}" alt="Фото" 
+                     style="max-width: 100%; max-height: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer;"
+                     onclick="window.open('{{ media_url }}', '_blank')"
+                     title="Кликните для просмотра в полном размере">
+            {% else %}
+                <video controls 
+                       style="max-width: 100%; max-height: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <source src="{{ media_url }}" type="video/mp4">
+                    Ваш браузер не поддерживает видео.
+                </video>
+            {% endif %}
+        </div>
+        <p style="margin-top: 0.5rem; text-align: center;">
+            <small>File ID: {{ post.media_file_id }}</small><br>
+            <a href="{{ media_url }}" target="_blank" style="font-size: 0.9rem; color: #3498db;">Открыть в новой вкладке</a>
+        </p>
+    </div>
+    
+    {% if complaints %}
+    <div style="margin-bottom: 1.5rem;">
+        <h3>Жалобы:</h3>
+        <ul>
+            {% for complaint in complaints %}
+            <li>
+                От пользователя ID: {{ complaint.complainer.telegram_id }} 
+                ({{ complaint.created_at.strftime('%d.%m.%Y %H:%M') }})
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <div style="display: flex; gap: 1rem;">
+        <form method="POST" action="{{ url_for('approve_post', post_id=post.id) }}" style="display: inline;">
+            <button type="submit" class="btn btn-success">Одобрить</button>
+        </form>
+        
+        <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" style="display: inline;">
+            <button type="submit" class="btn btn-danger">Удалить</button>
+        </form>
+    </div>
+    
+    <div style="margin-top: 2rem;">
+        <h3>Применить санкцию к автору</h3>
+        <form method="POST" action="{{ url_for('sanction_user', post_id=post.id) }}">
+            <div class="form-group">
+                <label for="sanction_type">Тип санкции</label>
+                <select id="sanction_type" name="sanction_type" required>
+                    <option value="warning">Предупреждение</option>
+                    <option value="day_ban">Блок на 1 день</option>
+                    <option value="session_ban">Блок на сессию (7 дней)</option>
+                    <option value="account_ban">Блок аккаунта</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="reason">Причина</label>
+                <textarea id="reason" name="reason"></textarea>
+            </div>
+            <button type="submit" class="btn btn-warning">Применить санкцию</button>
+        </form>
+    </div>
+    
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('moderation') }}" class="btn" style="background: #95a5a6;">Назад к списку</a>
+    </div>
+</div>
+{% endblock %}
+

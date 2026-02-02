@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - ShotShare Admin{% endblock %}
+
+{% block content %}
+<div class="stats">
+    <div class="stat-card">
+        <h3>Всего пользователей</h3>
+        <div class="value">{{ total_users }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Активных пользователей</h3>
+        <div class="value">{{ active_users }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Всего постов</h3>
+        <div class="value">{{ total_posts }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>На модерации</h3>
+        <div class="value">{{ moderation_posts }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Ожидают одобрения</h3>
+        <div class="value">{{ pending_posts }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Активных заданий</h3>
+        <div class="value">{{ active_tasks }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Последние задания</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Текст</th>
+                <th>Дата отправки</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in recent_tasks %}
+            <tr>
+                <td>{{ task.id }}</td>
+                <td>{{ task.text[:50] }}{% if task.text|length > 50 %}...{% endif %}</td>
+                <td>{{ task.scheduled_time.strftime('%d.%m.%Y %H:%M') }}</td>
+                <td>
+                    {% if task.is_active %}
+                        <span class="badge badge-success">Активно</span>
+                    {% else %}
+                        <span class="badge badge-danger">Неактивно</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Последние посты</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Автор</th>
+                <th>Тип</th>
+                <th>Статус</th>
+                <th>Жалобы</th>
+                <th>Дата</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in recent_posts %}
+            <tr>
+                <td>{{ post.id }}</td>
+                <td>{{ post.author.name }}</td>
+                <td>
+                    {% if post.post_type %}
+                        {% if post.post_type.value == 'fair' %}
+                            <span class="badge badge-success">Честный</span>
+                        {% else %}
+                            <span class="badge badge-warning">Случайный</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge">Не распределен</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if post.status.value == 'approved' %}
+                        <span class="badge badge-success">Одобрен</span>
+                    {% elif post.status.value == 'moderation' %}
+                        <span class="badge badge-warning">Модерация</span>
+                    {% elif post.status.value == 'deleted' %}
+                        <span class="badge badge-danger">Удален</span>
+                    {% else %}
+                        <span class="badge">Ожидает</span>
+                    {% endif %}
+                </td>
+                <td>{{ post.complaints_count }}</td>
+                <td>{{ post.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

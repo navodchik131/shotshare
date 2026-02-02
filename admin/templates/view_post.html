@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Просмотр материала #{{ post.id }} - ShotShare Admin{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Материал #{{ post.id }}</h2>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <a href="{{ url_for('posts') }}" class="btn">← Назад к списку</a>
+    </div>
+    
+    <div class="form-group">
+        <label>Автор:</label>
+        <p><strong>{{ post.author.name }}</strong> (Telegram ID: {{ post.author.telegram_id }})</p>
+        {% if post.author.channel_link %}
+        <p>Канал: <a href="{{ post.author.channel_link }}" target="_blank">{{ post.author.channel_link }}</a></p>
+        {% endif %}
+    </div>
+    
+    <div class="form-group">
+        <label>Задание:</label>
+        <p><strong>{{ post.task.text }}</strong></p>
+        <small>Задание #{{ post.task.id }}, создано {{ post.task.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+    </div>
+    
+    <div class="form-group">
+        <label>Тип контента:</label>
+        <p>{% if post.media_type == 'photo' %}📷 Фото{% else %}🎥 Видео{% endif %}</p>
+    </div>
+    
+    <div class="form-group">
+        <label>Статус:</label>
+        <p>
+            {% if post.status.value == 'pending' %}
+                <span class="badge badge-warning">Ожидает модерации</span>
+            {% elif post.status.value == 'approved' %}
+                <span class="badge badge-success">Одобрен</span>
+            {% elif post.status.value == 'rejected' %}
+                <span class="badge badge-danger">Отклонен</span>
+            {% elif post.status.value == 'moderation' %}
+                <span class="badge badge-warning">На модерации ({{ post.complaints_count }} жалоб)</span>
+            {% elif post.status.value == 'deleted' %}
+                <span class="badge badge-danger">Удален</span>
+            {% endif %}
+        </p>
+    </div>
+    
+    <div class="form-group">
+        <label>Дата создания:</label>
+        <p>{{ post.created_at.strftime('%d.%m.%Y %H:%M:%S') }}</p>
+    </div>
+    
+    <div class="form-group">
+        <label>Статистика:</label>
+        <p>
+            Лайков: {{ post.likes_count }}<br>
+            Просмотров: {{ post.views_count }}<br>
+            Жалоб: {{ post.complaints_count }}
+        </p>
+    </div>
+    
+    <div class="form-group">
+        <label>Медиа:</label>
+        <div style="margin-top: 1rem; text-align: center; background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+            {% if post.media_type == 'photo' %}
+                <img src="{{ media_url }}" alt="Фото" 
+                     style="max-width: 100%; max-height: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer;"
+                     onclick="window.open('{{ media_url }}', '_blank')"
+                     title="Кликните для просмотра в полном размере">
+            {% else %}
+                <video controls 
+                       style="max-width: 100%; max-height: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <source src="{{ media_url }}" type="video/mp4">
+                    Ваш браузер не поддерживает видео.
+                </video>
+            {% endif %}
+        </div>
+        <p style="margin-top: 0.5rem; text-align: center;">
+            <small>File ID: {{ post.media_file_id }}</small><br>
+            <a href="{{ media_url }}" target="_blank" style="font-size: 0.9rem; color: #3498db;">Открыть в новой вкладке</a>
+        </p>
+    </div>
+    
+    {% if post.status.value == 'pending' %}
+    <div class="card" style="background: #fff3cd; margin-top: 2rem;">
+        <h3>Действия модератора</h3>
+        <form method="POST" action="{{ url_for('reject_post', post_id=post.id) }}" style="display: inline-block;">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Отклонить этот материал? Пользователю будет отправлено уведомление с просьбой прислать новый материал.');">
+                ❌ Отклонить материал
+            </button>
+        </form>
+        <p style="margin-top: 1rem; color: #856404;">
+            <strong>Примечание:</strong> Если материал не отклонен, он автоматически будет участвовать в распределении после дедлайна задания.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

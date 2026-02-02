@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: shotshare_db
+    environment:
+      POSTGRES_USER: shotshare
+      POSTGRES_PASSWORD: shotshare_password
+      POSTGRES_DB: shotshare_db
+    volumes:
+      - shotshare_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Изменен внешний порт на 5433, чтобы не конфликтовать с существующими сервисами
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shotshare"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    container_name: shotshare_bot
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://shotshare:shotshare_password@db:5432/shotshare_db
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./bot:/app/bot
+      - ./database:/app/database
+      - ./media:/app/media
+      - ./config.py:/app/config.py
+    restart: unless-stopped
+    command: sh -c "python -c 'from database import init_db; init_db()' && python -m bot.main"
+
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    container_name: shotshare_admin
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://shotshare:shotshare_password@db:5432/shotshare_db
+    ports:
+      - "5001:5000"  # Изменен внешний порт на 5001, чтобы не конфликтовать с существующими сервисами
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./admin:/app/admin
+      - ./database:/app/database
+      - ./media:/app/media
+    restart: unless-stopped
+    command: sh -c "python -c 'from database import init_db; init_db()' && python -m admin.app"
+
+volumes:
+  shotshare_postgres_data:  # Переименован для избежания конфликтов
+

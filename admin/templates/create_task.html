@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Создать задание - ShotShare Admin{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Создать новое задание</h2>
+    
+    <div style="background: #e3f2fd; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; border-left: 4px solid #2196f3;">
+        <strong>ℹ️ Важно о времени отправки:</strong>
+        <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+            <li>Время указывается в <strong>UTC (всемирное координированное время)</strong></li>
+            <li>Бот проверяет задания каждый час и отправляет их в указанное время</li>
+            <li>Задание будет отправлено <strong>один раз</strong> в указанную дату и время</li>
+            <li>Пример: для отправки в 12:00 по Москве (UTC+3) укажите 09:00</li>
+        </ul>
+    </div>
+    
+    <div style="background: #fff3cd; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; border-left: 4px solid #ffc107;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <strong style="font-size: 1.1rem;">🕐 Текущее время UTC:</strong>
+            <span id="utc-time" style="font-size: 1.2rem; font-weight: bold; color: #d32f2f; font-family: monospace;"></span>
+        </div>
+        <div style="font-size: 0.9rem; color: #666;">
+            Используйте это время как ориентир при заполнении формы ниже
+        </div>
+    </div>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="text">Текст задания</label>
+            <textarea id="text" name="text" required placeholder="Например: Сфотографируй что-то синее"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="scheduled_date">Дата отправки (UTC)</label>
+            <input type="date" id="scheduled_date" name="scheduled_date" required>
+            <small style="color: #666; display: block; margin-top: 0.25rem;">Выберите дату, когда задание должно быть отправлено</small>
+        </div>
+        <div class="form-group">
+            <label for="scheduled_time">Время отправки (UTC)</label>
+            <input type="time" id="scheduled_time" name="scheduled_time" required>
+            <small style="color: #666; display: block; margin-top: 0.25rem;">Время в формате UTC (24-часовой формат, например: 09:00)</small>
+        </div>
+        <button type="submit" class="btn">Создать задание</button>
+        <a href="{{ url_for('tasks') }}" class="btn" style="background: #95a5a6; margin-left: 1rem;">Отмена</a>
+    </form>
+</div>
+
+<script>
+    // Показываем текущее время UTC с обновлением каждую секунду
+    function updateUTCTime() {
+        const now = new Date();
+        const utcTime = now.toISOString().substr(11, 8); // HH:MM:SS
+        const utcDate = now.toISOString().substr(0, 10); // YYYY-MM-DD
+        
+        // Форматируем для отображения
+        const dateParts = utcDate.split('-');
+        const formattedDate = dateParts[2] + '.' + dateParts[1] + '.' + dateParts[0];
+        
+        document.getElementById('utc-time').textContent = formattedDate + ' ' + utcTime + ' UTC';
+        
+        // Также устанавливаем значения по умолчанию в поля формы (опционально)
+        const dateInput = document.getElementById('scheduled_date');
+        const timeInput = document.getElementById('scheduled_time');
+        
+        if (dateInput && !dateInput.value) {
+            dateInput.value = utcDate;
+        }
+        if (timeInput && !timeInput.value) {
+            // Устанавливаем время на 1 минуту вперед для удобства
+            const timeParts = utcTime.split(':');
+            let hours = parseInt(timeParts[0]);
+            let minutes = parseInt(timeParts[1]) + 1;
+            if (minutes >= 60) {
+                minutes = 0;
+                hours = (hours + 1) % 24;
+            }
+            timeInput.value = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+        }
+    }
+    
+    // Обновляем сразу и каждую секунду
+    updateUTCTime();
+    setInterval(updateUTCTime, 1000);
+    
+    // Устанавливаем минимальную дату на сегодня
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById('scheduled_date');
+        if (dateInput) {
+            dateInput.min = new Date().toISOString().split('T')[0];
+        }
+    });
+</script>
+{% endblock %}
+
