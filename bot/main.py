@@ -89,8 +89,9 @@ def main():
     # Инициализация БД
     init_db()
     
-    # Создание приложения с JobQueue
-    application = Application.builder().token(config.TELEGRAM_BOT_TOKEN).job_queue().build()
+    # Создание приложения
+    # JobQueue будет автоматически создан при установке python-telegram-bot[job-queue]
+    application = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
     
     # Настройка меню команд (выполнится после инициализации бота)
     application.post_init = setup_bot_commands
