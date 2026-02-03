@@ -1,7 +1,8 @@
 import asyncio
 import logging
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
+from telegram.error import NetworkError, RetryAfter, TimedOut
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 from database import SessionLocal, init_db
 from database.models import User, Task, Session, Post, PostStatus, PostType, Complaint, PostView
 from datetime import datetime, timedelta
@@ -39,6 +40,36 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Обработчик ошибок бота"""
+    logger.error(f"Exception while handling an update: {context.error}", exc_info=context.error)
+    
+    # Обработка сетевых ошибок
+    if isinstance(context.error, NetworkError):
+        logger.warning(f"NetworkError: {context.error}. Бот продолжит работу.")
+        return
+    
+    # Обработка ошибок rate limit
+    if isinstance(context.error, RetryAfter):
+        logger.warning(f"Rate limit: нужно подождать {context.error.retry_after} секунд")
+        return
+    
+    # Обработка таймаутов
+    if isinstance(context.error, TimedOut):
+        logger.warning(f"Timeout error: {context.error}. Бот продолжит работу.")
+        return
+    
+    # Для других ошибок пытаемся уведомить пользователя, если это возможно
+    if update and update.effective_chat:
+        try:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="❌ Произошла ошибка. Попробуй еще раз или обратись к администратору."
+            )
+        except Exception as e:
+            logger.error(f"Не удалось отправить сообщение об ошибке: {e}")
+
+
 async def setup_bot_commands(application: Application):
     """Настройка меню команд бота"""
     from telegram import BotCommand
@@ -58,9 +89,8 @@ def main():
     # Инициализация БД
     init_db()
     
-    # Создание приложения
-    # JobQueue будет автоматически создан при установке python-telegram-bot[job-queue]
-    application = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
+    # Создание приложения с JobQueue
+    application = Application.builder().token(config.TELEGRAM_BOT_TOKEN).job_queue().build()
     
     # Настройка меню команд (выполнится после инициализации бота)
     application.post_init = setup_bot_commands
@@ -92,6 +122,9 @@ def main():
     
     # Обработка текстовых сообщений (для регистрации)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
+    
+    # Регистрация обработчика ошибок (должен быть после всех обработчиков)
+    application.add_error_handler(error_handler)
     
     # Настройка планировщиков
     setup_schedulers(application)

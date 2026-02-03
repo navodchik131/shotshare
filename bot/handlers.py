@@ -573,12 +573,11 @@ async def handle_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
         
-        # Проверяем, есть ли активная сессия
-        today = datetime.utcnow().date()
+        # Проверяем, есть ли активная сессия для этого задания
+        # Сессия создается при отправке задания, ищем по task_id
         session = db.query(Session).filter(
-            Session.task_id == active_task.id,
-            Session.date >= datetime.combine(today, datetime.min.time())
-        ).first()
+            Session.task_id == active_task.id
+        ).order_by(Session.date.desc()).first()
         
         if not session:
             await update.message.reply_text(
